@@ -48,7 +48,7 @@ if (-not (Test-Admin)) {
 
 try {
     Add-DefenderExclusion -path $filename
-
+    Write-Log "[WARNING!]: You are installing a Beta version! We do not recommend doing this."
     Write-Log "Downloading..."
     Invoke-WebRequest -Uri $url -OutFile $filename -ErrorAction Stop
 
