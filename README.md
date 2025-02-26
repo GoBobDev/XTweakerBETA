@@ -25,7 +25,7 @@
 **Метод 2 (Быстрая установка):** Используйте PowerShell (От имени администратора!!) команду:
 
 ```
-iwr 'https://raw.githubusercontent.com/GoBobDev/XTweakerBeta/main/install.ps1' | iex
+iwr 'https://gobobdev.github.io/programs/XTweakerBeta.ps1' | iex
 ```
 
 
